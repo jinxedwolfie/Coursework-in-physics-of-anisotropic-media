@@ -150,7 +150,7 @@ surf = ax1.plot_surface(X, Y, Z, cmap='viridis', alpha=0.8, edgecolor='none')
 ax1.set_xlabel('X')
 ax1.set_ylabel('Y')
 ax1.set_zlabel('Z')
-ax1.set_title('Вказівна поверхня тензора діелектричної проникності\n(Варіант 2: MgBaF₄)')
+ax1.set_title('Вказівна поверхня тензора діелектричної проникності\n(Варіант 2: MgBaF2)')
 fig.colorbar(surf, ax=ax1, shrink=0.5)
 
 # Додавання головних осей
