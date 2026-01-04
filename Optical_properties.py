@@ -6,35 +6,51 @@ import warnings
 warnings.filterwarnings('ignore')
 
 # Головні показники заломлення для LiB₃O₅
-N1 = 1.87
-N2 = 1.42
-N3 = 1.07
+# Позначення: Nₚ (найменший), Nₘ (середній), Nₛ (найбільший)
+N1_input = 1.5742
+N2_input = 1.6014
+N3_input = 1.6163
+
+# Сортуємо показники заломлення у порядку зростання
+N_values = sorted([N1_input, N2_input, N3_input])
+Np = N_values[0]  # Найменший (primary)
+Nm = N_values[1]  # Середній (medium)
+Ns = N_values[2]  # Найбільший (secondary)
+
+# Для сумісності з іншими функціями
+N1 = Np
+N2 = Nm
+N3 = Ns
 
 print("="*60)
 print("ДОСЛІДЖЕННЯ ОПТИЧНИХ ВЛАСТИВОСТЕЙ КРИСТАЛІВ LiB₃O₅")
 print("="*60)
-print(f"\nГоловні показники заломлення:")
-print(f"  N₁ = {N1}")
-print(f"  N₂ = {N2}")
-print(f"  N₃ = {N3}")
+print(f"\nВхідні показники заломлення: {N1_input}, {N2_input}, {N3_input}")
+print(f"\nГоловні показники заломлення (відсортовані):")
+print(f"  Nₚ = {Np:.4f} (найменший - вісь X)")
+print(f"  Nₘ = {Nm:.4f} (середній - вісь Y)")
+print(f"  Nₛ = {Ns:.4f} (найбільший - вісь Z)")
 
 # Розрахунок кутів за формулами (7), (8), (9)
 def calculate_angles():
-    """Обчислення кутів конічної рефракції"""
+    """Обчислення кутів конічної рефракції за формулами з методички"""
     
     # Формула (7) - кут між оптичними осями
-    V = np.arccos(np.sqrt((N3**2 - N2**2) / (N3**2 - N1**2)))
+    # V = arccos[√((N²ₛ - N²ₘ)/(N²ₛ - N²ₚ))]
+    V = np.arccos(np.sqrt((Ns**2 - Nm**2) / (Ns**2 - Np**2)))
     V_deg = np.degrees(V)
     
     # Формула (8) - кут внутрішньої конічної рефракції
-    alpha = np.arccos(N2**2 * np.sqrt(
-        (1/N1**2 - 1/N2**2) * (1/N3**2 - 1/N2**2)
+    # α = arccos[N²ₘ√((1/N²ₚ - 1/N²ₘ)(1/N²ₘ - 1/N²ₛ))]
+    alpha = np.arccos(Nm**2 * np.sqrt(
+        (1/Np**2 - 1/Nm**2) * (1/Nm**2 - 1/Ns**2)
     ))
     alpha_deg = np.degrees(alpha)
     
     # Формула (9) - кут зовнішньої конічної рефракції
-    beta = np.arccos(N2 * N3 * np.sqrt(
-        (1/N1**2 - 1/N2**2) * (1/N3**2 - 1/N2**2)
+    # β = arccos[NₚNₛ√((1/N²ₚ - 1/N²ₘ)(1/N²ₘ - 1/N²ₛ))]
+    beta = np.arccos(Np * Ns * np.sqrt(
+        (1/Np**2 - 1/Nm**2) * (1/Nm**2 - 1/Ns**2)
     ))
     beta_deg = np.degrees(beta)
     
@@ -182,6 +198,8 @@ def calculate_double_surfaces(theta, phi):
     """
     Розрахунок подвійних поверхонь за формулами (3) та (4)
     
+    Поверхня показників заломлення: c²ₓN²₁/(r²-N²₁) + c²ᵧN²₂/(r²-N²₂) + c²_zN²₃/(r²-N²₃) = 0
+    
     r_in = √[(b - √(b² - 4ac)) / 2a]  - формула (3)
     r_out = √[(b + √(b² - 4ac)) / 2a] - формула (4)
     """
@@ -194,14 +212,25 @@ def calculate_double_surfaces(theta, phi):
     c_y = sin_theta * sin_phi
     c_z = cos_theta
     
-    # Коефіцієнти згідно формул (5)
-    a = c_x**2 * N1**2 + c_y**2 * N2**2 + c_z**2 * N3**2
+    N1_sq = N1**2
+    N2_sq = N2**2
+    N3_sq = N3**2
     
-    b = (c_x**2 * N1**2 * (N2**2 + N3**2) + 
-         c_y**2 * N2**2 * (N1**2 + N3**2) + 
-         c_z**2 * N3**2 * (N1**2 + N2**2))
+    c_x_sq = c_x**2
+    c_y_sq = c_y**2
+    c_z_sq = c_z**2
     
-    c = N1**2 * N2**2 * N3**2
+    # Рівняння: c²ₓN²₁/(r²-N²₁) + c²ᵧN²₂/(r²-N²₂) + c²_zN²₃/(r²-N²₃) = 0
+    # Приводимо до квадратного рівняння: a(r²)² + b(r²) + c = 0
+    
+    # Коефіцієнти згідно формул (5) але з N² в чисельнику
+    a = c_x_sq * N1_sq + c_y_sq * N2_sq + c_z_sq * N3_sq
+    
+    b = -(c_x_sq * N1_sq * (N2_sq + N3_sq) + 
+          c_y_sq * N2_sq * (N1_sq + N3_sq) + 
+          c_z_sq * N3_sq * (N1_sq + N2_sq))
+    
+    c = N1_sq * N2_sq * N3_sq * (c_x_sq + c_y_sq + c_z_sq)  # = N²₁N²₂N²₃ оскільки сума c² = 1
     
     # Дискримінант
     discriminant = b**2 - 4*a*c
@@ -209,16 +238,22 @@ def calculate_double_surfaces(theta, phi):
     # Уникаємо від'ємних значень під коренем
     discriminant = np.maximum(discriminant, 0)
     
-    # Формула (3) - внутрішня поверхня
-    r_in = np.sqrt((b - np.sqrt(discriminant)) / (2*a))
+    # Формула (3) - внутрішня поверхня (r² менше)
+    r_sq_in = (-b - np.sqrt(discriminant)) / (2*a)
+    # Формула (4) - зовнішня поверхня (r² більше)
+    r_sq_out = (-b + np.sqrt(discriminant)) / (2*a)
     
-    # Формула (4) - зовнішня поверхня
-    r_out = np.sqrt((b + np.sqrt(discriminant)) / (2*a))
+    r_sq_in = np.maximum(r_sq_in, 0)
+    r_sq_out = np.maximum(r_sq_out, 0)
+    
+    r_in = np.sqrt(r_sq_in)
+    r_out = np.sqrt(r_sq_out)
     
     return r_in, r_out
 
 # 5. Поверхня показників заломлення (подвійна)
 print("\n5. Поверхня показників заломлення (подвійна):")
+print(f"   Рівняння: c²ₓN²₁/(r²-N²₁) + c²ᵧN²₂/(r²-N²₂) + c²_zN²₃/(r²-N²₃) = 0")
 print(f"   Використовуються формули (3) та (4) з коефіцієнтами (5)")
 R5_in, R5_out = calculate_double_surfaces(THETA, PHI)
 X5_in = R5_in * np.sin(THETA) * np.cos(PHI)
@@ -235,6 +270,9 @@ def ray_surface(theta, phi):
     """
     Променева поверхня: c²ₓQ²₁/(r²-Q²₁) + c²ᵧQ²₂/(r²-Q²₂) + c²_zQ²₃/(r²-Q²₃) = 0
     де Q_i = 1/N_i
+    
+    Розв'язуємо рівняння для r²:
+    Приводимо до спільного знаменника і отримуємо квадратне рівняння відносно r²
     """
     sin_theta = np.sin(theta)
     cos_theta = np.cos(theta)
@@ -250,20 +288,40 @@ def ray_surface(theta, phi):
     Q2 = 1.0 / N2
     Q3 = 1.0 / N3
     
-    # Коефіцієнти для рівняння з Q
-    a = c_x**2 * Q1**2 + c_y**2 * Q2**2 + c_z**2 * Q3**2
+    Q1_sq = Q1**2
+    Q2_sq = Q2**2
+    Q3_sq = Q3**2
     
-    b = (c_x**2 * (Q2**2 + Q3**2) + 
-         c_y**2 * (Q1**2 + Q3**2) + 
-         c_z**2 * (Q1**2 + Q2**2))
+    c_x_sq = c_x**2
+    c_y_sq = c_y**2
+    c_z_sq = c_z**2
     
-    c = Q1**2 * Q2**2 * Q3**2
+    # Рівняння: c²ₓQ²₁/(r²-Q²₁) + c²ᵧQ²₂/(r²-Q²₂) + c²_zQ²₃/(r²-Q²₃) = 0
+    # Приводимо до квадратного рівняння: a(r²)² + b(r²) + c = 0
     
+    # Коефіцієнти квадратного рівняння для r²
+    a = c_x_sq * Q1_sq + c_y_sq * Q2_sq + c_z_sq * Q3_sq
+    
+    b = -(c_x_sq * Q1_sq * (Q2_sq + Q3_sq) + 
+          c_y_sq * Q2_sq * (Q1_sq + Q3_sq) + 
+          c_z_sq * Q3_sq * (Q1_sq + Q2_sq))
+    
+    c = Q1_sq * Q2_sq * Q3_sq * (c_x_sq + c_y_sq + c_z_sq)  # = Q²₁Q²₂Q²₃ оскільки сума c² = 1
+    
+    # Розв'язуємо квадратне рівняння a(r²)² + b(r²) + c = 0
     discriminant = b**2 - 4*a*c
     discriminant = np.maximum(discriminant, 0)
     
-    r_in = np.sqrt((b - np.sqrt(discriminant)) / (2*a))
-    r_out = np.sqrt((b + np.sqrt(discriminant)) / (2*a))
+    # r² = (-b ± √discriminant) / 2a
+    r_sq_in = (-b - np.sqrt(discriminant)) / (2*a)
+    r_sq_out = (-b + np.sqrt(discriminant)) / (2*a)
+    
+    # Беремо квадратний корінь, уникаючи від'ємних значень
+    r_sq_in = np.maximum(r_sq_in, 0)
+    r_sq_out = np.maximum(r_sq_out, 0)
+    
+    r_in = np.sqrt(r_sq_in)
+    r_out = np.sqrt(r_sq_out)
     
     return r_in, r_out
 
@@ -281,12 +339,70 @@ print(f"   Внутрішня: X∈[{X6_in.min():.4f}, {X6_in.max():.4f}]")
 print(f"   Зовнішня:  X∈[{X6_out.min():.4f}, {X6_out.max():.4f}]")
 
 # 7. Поверхня обернених променевих швидкостей
-print("\n7. Поверхня обернених променевих швидкостей:")
-print(f"   Рівняння: c²ₓQ²ᵢ/(r²-N²ᵢ) + ... = 0")
-# Використовуємо ті ж формули що і для поверхні показників заломлення
-R7_in, R7_out = R5_in, R5_out
-X7_in, Y7_in, Z7_in = X5_in, Y5_in, Z5_in
-X7_out, Y7_out, Z7_out = X5_out, Y5_out, Z5_out
+def inverse_ray_velocity_surface(theta, phi):
+    """
+    Поверхня обернених променевих швидкостей: c²ₓ/(r²-N²₁) + c²ᵧ/(r²-N²₂) + c²_z/(r²-N²₃) = 0
+    
+    Розв'язуємо рівняння для r²:
+    Приводимо до спільного знаменника і отримуємо квадратне рівняння відносно r²
+    """
+    sin_theta = np.sin(theta)
+    cos_theta = np.cos(theta)
+    sin_phi = np.sin(phi)
+    cos_phi = np.cos(phi)
+    
+    c_x = sin_theta * cos_phi
+    c_y = sin_theta * sin_phi
+    c_z = cos_theta
+    
+    N1_sq = N1**2
+    N2_sq = N2**2
+    N3_sq = N3**2
+    
+    c_x_sq = c_x**2
+    c_y_sq = c_y**2
+    c_z_sq = c_z**2
+    
+    # Рівняння: c²ₓ/(r²-N²₁) + c²ᵧ/(r²-N²₂) + c²_z/(r²-N²₃) = 0
+    # Приводимо до квадратного рівняння: a(r²)² + b(r²) + c = 0
+    
+    # Коефіцієнти квадратного рівняння для r²
+    a = c_x_sq + c_y_sq + c_z_sq  # = 1 для нормованих напрямків
+    
+    b = -(c_x_sq * (N2_sq + N3_sq) + 
+          c_y_sq * (N1_sq + N3_sq) + 
+          c_z_sq * (N1_sq + N2_sq))
+    
+    c = c_x_sq * N2_sq * N3_sq + \
+        c_y_sq * N1_sq * N3_sq + \
+        c_z_sq * N1_sq * N2_sq
+    
+    # Розв'язуємо квадратне рівняння
+    discriminant = b**2 - 4*a*c
+    discriminant = np.maximum(discriminant, 0)
+    
+    r_sq_in = (-b - np.sqrt(discriminant)) / (2*a)
+    r_sq_out = (-b + np.sqrt(discriminant)) / (2*a)
+    
+    # Беремо квадратний корінь, уникаючи від'ємних значень
+    r_sq_in = np.maximum(r_sq_in, 0)
+    r_sq_out = np.maximum(r_sq_out, 0)
+    
+    r_in = np.sqrt(r_sq_in)
+    r_out = np.sqrt(r_sq_out)
+    
+    return r_in, r_out
+
+print("\n7. Поверхня обернених променевих швидкостей - ПОДВІЙНА:")
+print(f"   Рівняння: c²ₓ/(r²-N²₁) + c²ᵧ/(r²-N²₂) + c²_z/(r²-N²₃) = 0")
+print(f"   де N₁ = {N1}, N₂ = {N2}, N₃ = {N3}")
+R7_in, R7_out = inverse_ray_velocity_surface(THETA, PHI)
+X7_in = R7_in * np.sin(THETA) * np.cos(PHI)
+Y7_in = R7_in * np.sin(THETA) * np.sin(PHI)
+Z7_in = R7_in * np.cos(THETA)
+X7_out = R7_out * np.sin(THETA) * np.cos(PHI)
+Y7_out = R7_out * np.sin(THETA) * np.sin(PHI)
+Z7_out = R7_out * np.cos(THETA)
 print(f"   Внутрішня: Y∈[{Y7_in.min():.4f}, {Y7_in.max():.4f}]")
 print(f"   Зовнішня:  Y∈[{Y7_out.min():.4f}, {Y7_out.max():.4f}]")
 
@@ -295,6 +411,9 @@ def normal_velocity_surface(theta, phi):
     """
     Поверхня нормальних швидкостей: c²ₓ/(r²-Q²₁) + c²ᵧ/(r²-Q²₂) + c²_z/(r²-Q²₃) = 0
     де Q_i = 1/N_i
+    
+    Розв'язуємо рівняння для r²:
+    Приводимо до спільного знаменника і отримуємо квадратне рівняння відносно r²
     """
     sin_theta = np.sin(theta)
     cos_theta = np.cos(theta)
@@ -310,18 +429,41 @@ def normal_velocity_surface(theta, phi):
     Q2 = 1.0 / N2
     Q3 = 1.0 / N3
     
-    # Коефіцієнти для рівняння
-    a = c_x**2 + c_y**2 + c_z**2  # = 1 (нормована сфера)
+    Q1_sq = Q1**2
+    Q2_sq = Q2**2
+    Q3_sq = Q3**2
     
-    b = (c_x**2 * Q1**2 + c_y**2 * Q2**2 + c_z**2 * Q3**2)
+    c_x_sq = c_x**2
+    c_y_sq = c_y**2
+    c_z_sq = c_z**2
     
-    c = Q1**2 * Q2**2 * Q3**2
+    # Рівняння: c²ₓ/(r²-Q²₁) + c²ᵧ/(r²-Q²₂) + c²_z/(r²-Q²₃) = 0
+    # Приводимо до квадратного рівняння: a(r²)² + b(r²) + c = 0
     
+    # Коефіцієнти квадратного рівняння для r²
+    a = c_x_sq + c_y_sq + c_z_sq  # = 1 для нормованих напрямків
+    
+    b = -(c_x_sq * (Q2_sq + Q3_sq) + 
+          c_y_sq * (Q1_sq + Q3_sq) + 
+          c_z_sq * (Q1_sq + Q2_sq))
+    
+    c = c_x_sq * Q2_sq * Q3_sq + \
+        c_y_sq * Q1_sq * Q3_sq + \
+        c_z_sq * Q1_sq * Q2_sq
+    
+    # Розв'язуємо квадратне рівняння
     discriminant = b**2 - 4*a*c
     discriminant = np.maximum(discriminant, 0)
     
-    r_in = np.sqrt((b - np.sqrt(discriminant)) / (2*a))
-    r_out = np.sqrt((b + np.sqrt(discriminant)) / (2*a))
+    r_sq_in = (-b - np.sqrt(discriminant)) / (2*a)
+    r_sq_out = (-b + np.sqrt(discriminant)) / (2*a)
+    
+    # Беремо квадратний корінь, уникаючи від'ємних значень
+    r_sq_in = np.maximum(r_sq_in, 0)
+    r_sq_out = np.maximum(r_sq_out, 0)
+    
+    r_in = np.sqrt(r_sq_in)
+    r_out = np.sqrt(r_sq_out)
     
     return r_in, r_out
 
