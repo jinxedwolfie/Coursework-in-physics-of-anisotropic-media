@@ -118,9 +118,9 @@ def fresnel_ellipsoid(theta, phi):
     cos_phi = np.cos(phi)
     
     denominator = np.sqrt(
-        (N1 * sin_theta * cos_phi)**2 +
-        (N2 * sin_theta * sin_phi)**2 +
-        (N3 * cos_theta)**2
+        (N1 **2)*(sin_theta * cos_phi)**2 +
+        (N2 **2)*( sin_theta * sin_phi)**2 +
+        (N3 **2)*(cos_theta**2)
     )
     
     r = 1 / denominator
@@ -145,9 +145,9 @@ def velocity_ovaloid(theta, phi):
     cos_phi = np.cos(phi)
     
     r = np.sqrt(
-        (sin_theta * cos_phi)**2 / N1**2 +
-        (sin_theta * sin_phi)**2 / N2**2 +
-        cos_theta**2 / N3**2
+        ((sin_theta * cos_phi)**2 / N1**2) +
+        ((sin_theta * sin_phi)**2 / N2**2) +
+        (cos_theta**2 / N3**2)
     )
     return r
 
@@ -170,9 +170,9 @@ def refractive_index_ovaloid(theta, phi):
     cos_phi = np.cos(phi)
     
     r = np.sqrt(
-        (N1 * sin_theta * cos_phi)**2 +
-        (N2 * sin_theta * sin_phi)**2 +
-        (N3 * cos_theta)**2
+        ((N1 **2)* (sin_theta * cos_phi)**2) +
+        ((N2 **2)*(sin_theta * sin_phi)**2) +
+        ((N3 **2)*( cos_theta)**2)
     )
     return r
 
